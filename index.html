@@ -3,20 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <title>Nearest Hospital Finder</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    #map {
+      height: 90vh;
+      width: 100%;
+    }
+    #search-btn {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #2b6777;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <h1>🏥 Nearest Hospital Finder</h1>
   <button id="search-btn">Find Nearest Hospitals</button>
   <div id="map"></div>
 
-  <script src="script.js"></script>
-  <!-- ✅ Replace "YOUR_API_KEY" with your Google Maps API Key -->
+  <script>
+    let map;
+    let service;
+    let infowindow;
+
+    function initMap() {
+      // Get user location
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          let userLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+
+          map = new google.maps.Map(document.getElementById("map"), {
+            center: userLocation,
+            zoom: 14,
+          });
+
+          new google.maps.Marker({
+            position: userLocation,
+            map,
+            title: "You are here",
+          });
+
+          document.getElementById("search-btn").addEventListener("click", () => {
+            findHospitals(userLocation);
+          });
+
+        });
+      } else {
+        alert("Geolocation not supported by this browser.");
+      }
+    }
+
+    function findHospitals(location) {
+      const request = {
+        location: location,
+        radius: "3000", // search within 3km
+        type: ["hospital"], // can also use ["pharmacy", "doctor"]
+      };
+
+      service = new google.maps.places.PlacesService(map);
+      service.nearbySearch(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK) {
+          for (let i = 0; i < results.length; i++) {
+            createMarker(results[i]);
+          }
+        }
+      });
+    }
+
+    function createMarker(place) {
+      if (!place.geometry || !place.geometry.location) return;
+
+      const marker = new google.maps.Marker({
+        map,
+        position: place.geometry.location,
+      });
+
+      google.maps.event.addListener(marker, "click", () => {
+        infowindow = new google.maps.InfoWindow({
+          content: `<strong>${place.name}</strong><br>${place.vicinity}`,
+        });
+        infowindow.open(map, marker);
+      });
+    }
+  </script>
+
+
   <script async
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_inFPPv9M2W2KGvIGkGELgdLBSTcfd6w&libraries=places&callback=initMap">
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap">
   </script>
 </body>
 </html>
-
-
-<!-- AIzaSyB_inFPPv9M2W2KGvIGkGELgdLBSTcfd6w -->
